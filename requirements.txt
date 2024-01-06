@@ -16,5 +16,5 @@ scipy==1.11.0
 
 # Additional modules
 streamlit-lottie==0.0.5  
-option-menu==1.0.1
+streamlit_option-menu==1.0.1
 certifi==2021.10.8
