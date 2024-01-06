@@ -1,34 +1,22 @@
 # Basic dependencies
-csv
-io
-os
-streamlit
-pandas
-math
-numpy
-matplotlib
-plotly
-sympy
-json
-requests
+streamlit >= 1.15.1
+pandas >= 1.5.4
+numpy >= 1.25.1
+matplotlib >= 3.7.0
+plotly >= 5.15.0
+sympy >= 1.11.1
+requests >= 2.29.2
 itertools
-PIL
+PIL >= 9.4.0
 
 # MongoDB integration
-pymongo
+pymongo >= 4.6.0
 
 # Statistical analysis
-scipy
+scipy >= 1.9.3
 
 # Additional modules
-streamlit_lottie
-st_lottie_spinner
-option_menu
-Chart
-Plots
-TimeSeries
-anova
-Tests
-Hypo_test
-addon
-txttocsv
+streamlit-lottie >= 0.4.3  
+st-lottie-spinner >= 0.1.4
+option-menu >= 0.4.2
+certifi >= 2022.12.7
