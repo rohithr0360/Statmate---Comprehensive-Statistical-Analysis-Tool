@@ -6,7 +6,7 @@ matplotlib >= 3.7.0
 plotly >= 5.15.0
 sympy >= 1.11.1
 requests >= 2.29.2
-itertools
+itertools >= 10
 PIL >= 9.4.0
 
 # MongoDB integration
