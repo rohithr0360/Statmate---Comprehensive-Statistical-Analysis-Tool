@@ -12,7 +12,7 @@ pillow==9.0.0
 pymongo==4.0.1
 
 # Statistical analysis
-scipy==1.7.3
+scipy==1.11.0
 
 # Additional modules
 streamlit-lottie==0.4.3  
