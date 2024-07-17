@@ -1,0 +1,48 @@
+cases in dim time
+	- leap years
+	- national holidays and special days
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, date_add, date_sub
+from datetime import datetime, timedelta
+
+spark = SparkSession.builder.appName("DimTimeTable").getOrCreate()
+
+input_date = "2000-01-01"
+
+input_date_dt = datetime.strptime(input_date, "%Y-%m-%d")
+start_date = input_date_dt - timedelta(days=3650)
+end_date = input_date_dt + timedelta(days=3650)
+
+date_df = spark.range((start_date - timedelta(days=1)).strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")).toDF("Date")
+date_df = date_df.dropDuplicates(["Date"])
+
+min_date = date_df.selectExpr("MIN(Date)").first()[0]
+max_date = date_df.selectExpr("MAX(Date)").first()[0]
+
+full_date_range_df = spark.range(min_date, date_add(max_date, 1), timedelta(days=1)).toDF("Date")
+
+date_df = full_date_range_df.join(date_df, "Date", "left").select("Date")
+
+date_df.createOrReplaceTempView("date_df")
+
+dim_time_sql = """
+SELECT 
+    ROW_NUMBER() OVER (ORDER BY Date) AS TimeSkey,
+    Date,
+    DATE_FORMAT(Date, 'EEEE') AS DayOfWeek,
+    CASE WHEN Date = (SELECT MAX(Date) FROM date_df) THEN 1 ELSE 0 END AS CurrentDay,
+    CASE WHEN DATE_FORMAT(Date, 'u') IN ('6', '7') THEN 0 ELSE 1 END AS WorkingDay,
+    MONTH(Date) AS MonthId,
+    DATE_FORMAT(Date, 'MMMM') AS MonthDesc,
+    CAST(QUARTER(Date) AS SMALLINT) AS QuarterId,
+    CONCAT('Q', QUARTER(Date)) AS QuarterDesc,
+    YEAR(Date) AS Year
+FROM date_df
+"""
+
+dim_time_df = spark.sql(dim_time_sql)
+
+dim_time_df.show()
+
+
