@@ -46,3 +46,55 @@ dim_time_df = spark.sql(dim_time_sql)
 dim_time_df.show()
 
 
+
+
+from pyspark.sql.functions import col, lit, current_date, concat, xxhash64
+
+# Join sourceDF and targetDF
+joinDF = sourceDF.join(targetDF, (sourceDF.pk1 == targetDF.pk1) & 
+                       (sourceDF.pk2 == targetDF.pk2) & 
+                       (targetDF.active_status == "Y"), "leftouter") \
+    .select(sourceDF["*"], 
+            targetDF.pk1.alias("target_pk1"), 
+            targetDF.pk2.alias("target_pk2"), 
+            targetDF.dim1.alias("target_dim1"), 
+            targetDF.dim2.alias("target_dim2"), 
+            targetDF.dim3.alias("target_dim3"), 
+            targetDF.dim4.alias("target_dim4"))
+
+display(joinDF)
+
+# Filter rows where source and target hashes don't match
+filterDF = joinDF.filter(xxhash64(joinDF.dim1, joinDF.dim2, joinDF.dim3, joinDF.dim4) != 
+                         xxhash64(joinDF.target_dim1, joinDF.target_dim2, joinDF.target_dim3, joinDF.target_dim4))
+display(filterDF)
+
+# Create merge key
+mergeDF = filterDF.withColumn("MERGEKEY", concat(filterDF.pk1, filterDF.pk2))
+display(mergeDF)
+
+# Create dummy DataFrame
+dummyDF = filterDF.filter("target_pk1 is not null").withColumn("MERGEKEY", lit(None))
+display(dummyDF)
+
+scdDf = merged.union(dummyDf)
+
+# Merge with target table
+targetTable.alias("target").merge(
+    source = scdDF.alias("source"),
+    condition = "concat(target.pk1, target.pk2) = source.MERGEKEY and target.active_status = 'Y'"
+).whenMatchedUpdate(set = {
+    "active_status": lit(0),
+    "end_date": current_date()
+}).whenNotMatchedInsert(values = {
+    "pk1": "source.pk1",
+    "pk2": "source.pk2",
+    "dim1": "source.dim1",
+    "dim2": "source.dim2",
+    "dim3": "source.dim3",
+    "dim4": "source.dim4",
+    "active_status": lit(1),
+    "start_date": current_date(),
+    "end_date": lit("9999-12-31")
+}).execute()
+
